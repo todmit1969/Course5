@@ -7,9 +7,9 @@ from .serializers import HabbitSerializer
 from users.permissions import IsOwner
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
-from rest_framework import status
+# from django.shortcuts import get_object_or_404
+# from rest_framework.response import Response
+# from rest_framework import status
 
 
 @method_decorator(cache_page(60 * 5), name="dispatch")
@@ -18,11 +18,13 @@ class PublicHabbitListAPIView(ListAPIView):
     serializer_class = HabbitSerializer
     permission_classes = [AllowAny]
 
+
 @method_decorator(cache_page(60 * 5), name="dispatch")
 class PublicHabbitDetailAPIView(RetrieveAPIView):
     queryset = Habbit.objects.filter(is_public=True)
     serializer_class = HabbitSerializer
     permission_classes = [AllowAny]
+
 
 @method_decorator(cache_page(60 * 5), name="dispatch")
 class HabbitViewSet(ModelViewSet):

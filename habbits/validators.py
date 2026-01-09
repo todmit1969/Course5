@@ -1,5 +1,6 @@
 from rest_framework.exceptions import ValidationError
 
+
 def habit_validation(attrs):
     errors = {}
 
