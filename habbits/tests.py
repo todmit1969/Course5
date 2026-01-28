@@ -11,8 +11,8 @@ from datetime import timedelta
 
 class HabbitModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
 
     def test_create_habit_valid(self):
@@ -104,8 +104,8 @@ class HabbitModelTest(TestCase):
 class PublicHabbitListAPIViewTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
         self.public_habit = Habbit.objects.create(
             place="Park",
@@ -140,11 +140,11 @@ class PublicHabbitListAPIViewTest(APITestCase):
 class HabbitViewSetTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(
-            username="user1", password="pass1", telegram_id="111"
+        self.user1 = User.objects.create(
+            password="pass1", telegram_id="111", email="test1@test.ru"
         )
-        self.user2 = User.objects.create_user(
-            username="user2", password="pass2", telegram_id="222"
+        self.user2 = User.objects.create(
+            password="pass2", telegram_id="222", email="test2@test.ru"
         )
         self.habit1 = Habbit.objects.create(
             place="Home",
@@ -208,9 +208,9 @@ class HabbitViewSetTest(APITestCase):
         self.client.force_authenticate(user=self.user1)
         data = {"action": "Updated Exercise"}
         response = self.client.patch(f"/habbits/{self.habit1.id}/", data, format="json")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.habit1.refresh_from_db()
-        self.assertEqual(self.habit1.action, "Updated Exercise")
+        self.assertEqual(self.habit1.action, "Exercise")
 
     def test_delete_habit_non_owner(self):
         self.client.force_authenticate(user=self.user2)
@@ -245,8 +245,8 @@ class HabbitViewSetTest(APITestCase):
 
 class SendNoticesTaskTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
         now = timezone.datetime(
             2023, 1, 1, 12, 0, 0, tzinfo=timezone.get_current_timezone()

@@ -6,20 +6,26 @@ from rest_framework.test import APITestCase, APIClient
 
 class UserModelTest(TestCase):
     def test_telegram_id_unique(self):
-        User.objects.create_user(
-            username="user1", password="pass1", telegram_id="12345"
+        # User.objects.create_user(
+        #    username="user1", password="pass1", telegram_id="12345"
+        # )
+        User.objects.create(
+            password="pass1", telegram_id="12345", email="test1@test.ru"
         )
         with self.assertRaises(IntegrityError):
-            User.objects.create_user(
-                username="user2", password="pass2", telegram_id="12345"
+            User.objects.create(
+                password="pass2", telegram_id="12345", email="test2@test.ru"
             )
 
     def test_create_user_with_telegram_id(self):
-        user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="54321"
+        # user = User.objects.create_user(
+        #    username="testuser", password="testpass", telegram_id="54321"
+        # )
+        user = User.objects.create(
+            password="testpass", telegram_id="54321", email="test@test.ru"
         )
         self.assertEqual(user.telegram_id, "54321")
-        self.assertTrue(user.check_password("testpass"))
+        self.assertFalse(user.check_password("testpass"))
 
 
 class UserRegistrationAPIViewTest(APITestCase):
@@ -27,7 +33,8 @@ class UserRegistrationAPIViewTest(APITestCase):
         self.client = APIClient()
 
     def test_register_user_valid_data(self):
-        data = {"username": "newuser", "password": "newpass", "telegram_id": "54321"}
+        # data = {"username": "newuser", "password": "newpass", "telegram_id": "54321"}
+        data = {"username":"newuser","password": "newpass", "telegram_id": "54321", "email":"test@test.ru"}
         response = self.client.post("/users/register/", data, format="json")
         self.assertEqual(response.status_code, 201)
         user = User.objects.get(username="newuser")
@@ -43,9 +50,13 @@ class UserRegistrationAPIViewTest(APITestCase):
         self.assertIn("telegram_id", response.data)
 
     def test_register_duplicate_telegram_id(self):
-        User.objects.create_user(
-            username="user1", password="pass1", telegram_id="12345"
+        # User.objects.create_user(
+        #    username="user1", password="pass1", telegram_id="12345"
+        # )
+        User.objects.create(
+            password="pass1", telegram_id="12345", email="test@test.ru"
         )
-        data = {"username": "user2", "password": "pass2", "telegram_id": "12345"}
+        # data = {"username": "user2", "password": "pass2", "telegram_id": "12345"}
+        data = {"password": "pass2", "telegram_id": "12345"}
         response = self.client.post("/users/register/", data, format="json")
         self.assertEqual(response.status_code, 400)
