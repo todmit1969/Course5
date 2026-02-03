@@ -9,7 +9,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "username",
+            "email",
             "password",
             "telegram_id",
         ]

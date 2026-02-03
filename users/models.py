@@ -3,7 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    username = models.CharField(max_length=50, verbose_name="Пользователь", blank=True, null=True)
+    username = None # models.CharField(max_length=50, verbose_name="Пользователь", blank=True, null=True)
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
     password = models.CharField(max_length=100, verbose_name='Пароль пользователя')
     telegram_id = models.CharField(
@@ -13,10 +13,10 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
 
-def __str__(self):
-    return f'{self.username}'
+    def __str__(self):
+        return f'{self.username}'
 
 
-class Meta:
-    verbose_name = 'Пользователь'
-    verbose_name_plural = 'Пользователи'
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'

@@ -34,10 +34,10 @@ class UserRegistrationAPIViewTest(APITestCase):
 
     def test_register_user_valid_data(self):
         # data = {"username": "newuser", "password": "newpass", "telegram_id": "54321"}
-        data = {"username":"newuser","password": "newpass", "telegram_id": "54321", "email":"test@test.ru"}
+        data = {"password": "newpass", "telegram_id": "54321", "email":"test@test.ru"}
         response = self.client.post("/users/register/", data, format="json")
         self.assertEqual(response.status_code, 201)
-        user = User.objects.get(username="newuser")
+        user = User.objects.get(email="test@test.ru")
         self.assertTrue(user.check_password("newpass"))
         self.assertEqual(user.telegram_id, "54321")
         self.assertTrue(user.is_active)
