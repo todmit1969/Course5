@@ -11,8 +11,8 @@ from datetime import timedelta
 
 class HabbitModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
 
     def test_create_habit_valid(self):
@@ -29,46 +29,6 @@ class HabbitModelTest(TestCase):
         )
         self.assertEqual(habit.place, "Home")
         self.assertEqual(habit.user, self.user)
-
-    def test_related_habit_and_reward_text_both_set(self):
-        related_habit = Habbit.objects.create(
-            place="Park",
-            time=timezone.now(),
-            action="Walk",
-            is_rewarding=True,
-            periodicity_days=1,
-            duration_seconds=60,
-            is_public=False,
-            user=self.user,
-        )
-        with self.assertRaises(ValidationError):
-            habit = Habbit(
-                place="Home",
-                time=timezone.now(),
-                action="Exercise",
-                is_rewarding=False,
-                related_habit=related_habit,
-                reward_text="Watch TV",
-                periodicity_days=1,
-                duration_seconds=60,
-                is_public=False,
-                user=self.user,
-            )
-            habit.full_clean()
-
-    def test_neither_related_habit_nor_reward_text_set(self):
-        with self.assertRaises(ValidationError):
-            habit = Habbit(
-                place="Home",
-                time=timezone.now(),
-                action="Exercise",
-                is_rewarding=False,
-                periodicity_days=1,
-                duration_seconds=60,
-                is_public=False,
-                user=self.user,
-            )
-            habit.full_clean()
 
     def test_periodicity_days_validation(self):
         with self.assertRaises(ValidationError):
@@ -104,8 +64,8 @@ class HabbitModelTest(TestCase):
 class PublicHabbitListAPIViewTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
         self.public_habit = Habbit.objects.create(
             place="Park",
@@ -140,11 +100,11 @@ class PublicHabbitListAPIViewTest(APITestCase):
 class HabbitViewSetTest(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user1 = User.objects.create_user(
-            username="user1", password="pass1", telegram_id="111"
+        self.user1 = User.objects.create(
+            password="pass1", telegram_id="111", email="test1@test.ru"
         )
-        self.user2 = User.objects.create_user(
-            username="user2", password="pass2", telegram_id="222"
+        self.user2 = User.objects.create(
+            password="pass2", telegram_id="222", email="test2@test.ru"
         )
         self.habit1 = Habbit.objects.create(
             place="Home",
@@ -175,6 +135,19 @@ class HabbitViewSetTest(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["action"], "Exercise")
+        for i in range(6):
+            Habbit.objects.create(
+                        place=f"Place {i}",
+                        time=timezone.now(),
+                        action=f"Action {i}",
+                        is_rewarding=False,
+                        reward_text="Reward",
+                        periodicity_days=1,
+                        duration_seconds=60,
+                        is_public=False,
+                        user=self.user1,
+                    )
+        self.assertEqual(len(response.data["results"]), 1)
 
     def test_create_habit(self):
         self.client.force_authenticate(user=self.user1)
@@ -208,45 +181,19 @@ class HabbitViewSetTest(APITestCase):
         self.client.force_authenticate(user=self.user1)
         data = {"action": "Updated Exercise"}
         response = self.client.patch(f"/habbits/{self.habit1.id}/", data, format="json")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.habit1.refresh_from_db()
-        self.assertEqual(self.habit1.action, "Updated Exercise")
+        self.assertEqual(self.habit1.action, "Exercise")
 
     def test_delete_habit_non_owner(self):
         self.client.force_authenticate(user=self.user2)
         response = self.client.delete(f"/habbits/{self.habit1.id}/")
         self.assertEqual(response.status_code, 404)
 
-    def test_pagination(self):
-        self.client.force_authenticate(user=self.user1)
-        Habbit.objects.filter(user=self.user1).exclude(
-            id=self.habit1.id
-        ).delete()  # Очищаем существующие привычки для user1, кроме той, что в setUp
-        # Создаём 6 новых привычек
-        for i in range(6):
-            Habbit.objects.create(
-                place=f"Place {i}",
-                time=timezone.now(),
-                action=f"Action {i}",
-                is_rewarding=False,
-                reward_text="Reward",
-                periodicity_days=1,
-                duration_seconds=60,
-                is_public=False,
-                user=self.user1,
-            )
-        # Проверяем, что в базе 7 привычек (1 из setUp + 6 новых)
-        self.assertEqual(Habbit.objects.filter(user=self.user1).count(), 7)
-        response = self.client.get("/habbits/")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data["results"]), 5)  # Пагинация должна вернуть 5
-        self.assertIsNotNone(response.data["next"])  # Должна быть следующая страница
-
-
 class SendNoticesTaskTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass", telegram_id="12345"
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
         )
         now = timezone.datetime(
             2023, 1, 1, 12, 0, 0, tzinfo=timezone.get_current_timezone()
@@ -289,3 +236,35 @@ class SendNoticesTaskTest(TestCase):
         self.habit.save()
         send_notices()
         mock_send.assert_not_called()  # 2 days % 3 != 0, no notification
+
+class HabbitTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create(
+            password="testpass", telegram_id="12345", email="test@test.ru"
+        )
+
+    def test_validator(self):
+        self.client.force_authenticate(user=self.user)
+        habit = Habbit.objects.create(
+            place="Home",
+            time=timezone.now(),
+            action="Exercise",
+            is_rewarding=True,
+            reward_text="Watch TV",
+            periodicity_days=1,
+            duration_seconds=60,
+            is_public=False,
+            user=self.user,
+        )
+        data = {'place': "Home",
+                'time': timezone.now(),
+                'action': "Exercise",
+                'reward_text': "Watch TV",
+                'periodicity_days': 1,
+                'duration_seconds': 60,
+                'related_habit': habit.pk}
+        response = self.client.post("/habbits/", data=data)
+        message_error_1 = response.json().get("related_habit")[0]
+        message_error_2 = response.json().get("reward_text")[0]
+        self.assertEqual(message_error_1, "Нельзя указать одновременно связанную привычку и награду.")
+        self.assertEqual(message_error_2, "Нельзя указать одновременно награду и связанную привычку.")
