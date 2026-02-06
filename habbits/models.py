@@ -1,5 +1,7 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from rest_framework.exceptions import ValidationError
+
 from users.models import User
 
 
@@ -45,6 +47,10 @@ class Habbit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     user = models.ForeignKey(to=User, on_delete=models.CASCADE, blank=True, null=True)
+
+    def clean(self):
+        if self.related_habit and self.reward_text:
+            raise ValidationError("Not right")
 
     def __str__(self):
         return f'{self.user}, {self.action}'
